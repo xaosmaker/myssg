@@ -1,4 +1,4 @@
-from htmlnode import HTMLNode, LeafNode
+from htmlnode import HTMLNode, LeafNode, ParentNode
 import unittest
 
 
@@ -38,3 +38,39 @@ class TestLeafNode(unittest.TestCase):
                         "type": "text", "value": "124"})
         self.assertEqual(
             node.to_html(), "<div type=\"text\" value=\"124\">I'm a div</div>")
+
+
+class TestParentNode(unittest.TestCase):
+    def test_no_tag(self):
+        node = ParentNode()
+        with self.assertRaises(ValueError) as e:
+            node.to_html()
+        self.assertEqual(str(e.exception), "tag required for ParentNode")
+
+    def test_no_children(self):
+        node = ParentNode(tag="p")
+        with self.assertRaises(ValueError) as e:
+            node.to_html()
+        self.assertEqual(str(e.exception), "children required for ParentNode")
+
+    def test_parent_node(self):
+        node = ParentNode("div", children=[LeafNode(
+            "div", "im a div", {"type": "text"})])
+        to_html = "<div><div type=\"text\">im a div</div></div>"
+        self.assertEqual(to_html, node.to_html())
+
+    def test_parent_node_with_props(self):
+        node = ParentNode("div", children=[LeafNode(
+            "div", "im a div", {"type": "text"})], props={"type": "password"})
+        to_html = "<div type=\"password\"><div type=\"text\">im a div</div></div>"
+        self.assertEqual(to_html, node.to_html())
+
+    def test_parent_node_with_props_and_multiple_nodes(self):
+        node = ParentNode("div", children=[LeafNode(
+            "div", "im a div", {"type": "text"}),
+            LeafNode(None, "simple text"),
+            ParentNode("div", [LeafNode("p", "im a p"),], {"key": "value"}),
+
+        ], props={"type": "password"})
+        to_html = "<div type=\"password\"><div type=\"text\">im a div</div>simple text<div key=\"value\"><p>im a p</p></div></div>"
+        self.assertEqual(to_html, node.to_html())
